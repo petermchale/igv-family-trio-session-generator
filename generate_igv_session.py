@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""
+Script to generate IGV session XML files from a template.
+
+This script takes a template XML file with Mustache-style variables and generates
+instantiated XML files by replacing the variables with actual values for a family trio.
+
+Usage:
+    python generate_igv_session.py <father_id> <mother_id> <child_id>
+
+Examples:
+    python generate_igv_session.py NA12877 NA12878 NA12881
+"""
+
+import sys
+import pystache
+
+
+def generate_igv_session(father_id, mother_id, child_id, template_file="igv_session_template.xml"):
+    """
+    Generate an IGV session XML file from a template for a family trio.
+    
+    Args:
+        father_id (str): The father's sample ID to substitute in the template
+        mother_id (str): The mother's sample ID to substitute in the template
+        child_id (str): The child's sample ID to substitute in the template
+        template_file (str): Path to the template XML file
+    
+    Returns:
+        str: Path to the generated XML file
+    """
+    # Generate output filename using the standard format
+    output_file = f"{father_id}.{mother_id}.{child_id}.igv.xml"
+    
+    # Read the template file
+    try:
+        with open(template_file, 'r') as f:
+            template_content = f.read()
+    except FileNotFoundError:
+        print(f"Error: Template file '{template_file}' not found.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error reading template file: {e}")
+        sys.exit(1)
+    
+    # Prepare the context data for template rendering
+    context = {
+        'father_id': father_id,
+        'mother_id': mother_id,
+        'child_id': child_id
+    }
+    
+    # Render the template
+    try:
+        rendered_content = pystache.render(template_content, context)
+    except Exception as e:
+        print(f"Error rendering template: {e}")
+        sys.exit(1)
+    
+    # Write the output file
+    try:
+        with open(output_file, 'w') as f:
+            f.write(rendered_content)
+        print(f"Successfully generated IGV session file: {output_file}")
+        return output_file
+    except Exception as e:
+        print(f"Error writing output file: {e}")
+        sys.exit(1)
+
+
+def main():
+    """Main function to handle command line arguments and execute the script."""
+    if len(sys.argv) != 4:
+        print(__doc__)
+        sys.exit(1)
+    
+    father_id = sys.argv[1]
+    mother_id = sys.argv[2]
+    child_id = sys.argv[3]
+    
+    # Generate the IGV session file
+    generated_file = generate_igv_session(father_id, mother_id, child_id)
+    
+    # Print a summary
+    print(f"\nSummary:")
+    print(f"  Father ID: {father_id}")
+    print(f"  Mother ID: {mother_id}")
+    print(f"  Child ID: {child_id}")
+    print(f"  Output file: {generated_file}")
+    print(f"  Template used: igv_session_template.xml")
+
+
+if __name__ == "__main__":
+    main() 
