@@ -6,17 +6,19 @@ This script takes a template XML file with Mustache-style variables and generate
 instantiated XML files by replacing the variables with actual values for a family trio.
 
 Usage:
-    python generate_igv_session.py <father_id> <mother_id> <child_id>
+    python generate_igv_session.py <father_id> <mother_id> <child_id> [--include-bam-tracks]
 
 Examples:
     python generate_igv_session.py NA12877 NA12878 NA12881
+    python generate_igv_session.py NA12877 NA12878 NA12881 --include-bam-tracks
 """
 
 import sys
+import argparse
 import pystache
 
 
-def generate_igv_session(father_id, mother_id, child_id, template_file="igv_session_template.xml"):
+def generate_igv_session(father_id, mother_id, child_id, template_file="igv_session_template.xml", include_bam_tracks=False):
     """
     Generate an IGV session XML file from a template for a family trio.
     
@@ -25,6 +27,7 @@ def generate_igv_session(father_id, mother_id, child_id, template_file="igv_sess
         mother_id (str): The mother's sample ID to substitute in the template
         child_id (str): The child's sample ID to substitute in the template
         template_file (str): Path to the template XML file
+        include_bam_tracks (bool): Whether to include BAM tracks for each member
     
     Returns:
         str: Path to the generated XML file
@@ -47,7 +50,8 @@ def generate_igv_session(father_id, mother_id, child_id, template_file="igv_sess
     context = {
         'father_id': father_id,
         'mother_id': mother_id,
-        'child_id': child_id
+        'child_id': child_id,
+        'include_bam_tracks': include_bam_tracks
     }
     
     # Render the template
@@ -70,24 +74,43 @@ def generate_igv_session(father_id, mother_id, child_id, template_file="igv_sess
 
 def main():
     """Main function to handle command line arguments and execute the script."""
-    if len(sys.argv) != 4:
-        print(__doc__)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="Generate IGV session XML files from a template for a family trio.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s NA12877 NA12878 NA12881
+  %(prog)s NA12877 NA12878 NA12881 --include-bam-tracks
+        """
+    )
     
-    father_id = sys.argv[1]
-    mother_id = sys.argv[2]
-    child_id = sys.argv[3]
+    parser.add_argument('father_id', help='The father\'s sample ID')
+    parser.add_argument('mother_id', help='The mother\'s sample ID')
+    parser.add_argument('child_id', help='The child\'s sample ID')
+    parser.add_argument('--include-bam-tracks', action='store_true',
+                       help='Include BAM tracks for each member of the trio')
+    parser.add_argument('--template', default='igv_session_template.xml',
+                       help='Path to the template XML file (default: igv_session_template.xml)')
+    
+    args = parser.parse_args()
     
     # Generate the IGV session file
-    generated_file = generate_igv_session(father_id, mother_id, child_id)
+    generated_file = generate_igv_session(
+        args.father_id, 
+        args.mother_id, 
+        args.child_id, 
+        template_file=args.template,
+        include_bam_tracks=args.include_bam_tracks
+    )
     
     # Print a summary
     print(f"\nSummary:")
-    print(f"  Father ID: {father_id}")
-    print(f"  Mother ID: {mother_id}")
-    print(f"  Child ID: {child_id}")
+    print(f"  Father ID: {args.father_id}")
+    print(f"  Mother ID: {args.mother_id}")
+    print(f"  Child ID: {args.child_id}")
+    print(f"  Include BAM tracks: {args.include_bam_tracks}")
     print(f"  Output file: {generated_file}")
-    print(f"  Template used: igv_session_template.xml")
+    print(f"  Template used: {args.template}")
 
 
 if __name__ == "__main__":
